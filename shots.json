@@ -1,6 +1,6 @@
 [
-  { "file": "1-start.jpg", "query": "?shot=start&seed=1" },
-  { "file": "2-play.jpg", "query": "?shot=play&seed=1" },
-  { "file": "3-win.jpg", "query": "?shot=win&seed=1" },
-  { "file": "4-lose.jpg", "query": "?shot=lose&seed=1" }
+  {"name":"1-cover.jpg","url":"?shot=cover&seed=1"},
+  {"name":"2-play.jpg","url":"?shot=play&seed=1"},
+  {"name":"3-win.jpg","url":"?shot=win&seed=1"},
+  {"name":"4-lose.jpg","url":"?shot=lose&seed=1"}
 ]
