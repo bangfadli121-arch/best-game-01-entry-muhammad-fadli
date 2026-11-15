@@ -1,2 +1,21 @@
-// Shared colours for the nebula and its inhabitants.
-export const C={ink:'#080b24',deep:'#111336',blue:'#69d8ff',cyan:'#a4f5ff',gold:'#ffd579',orange:'#ff845e',violet:'#b494ff',pink:'#ff69b4',white:'#f5fbff',muted:'#98a8cf',red:'#ff496d'};
+export const colors = {
+  sky: '#58d9d0',
+  skyDeep: '#32bfc0',
+  cloud: '#f4fff0',
+  cloudShade: '#c9f4e8',
+  rust: '#c85c32',
+  rustDark: '#8c3929',
+  rustBright: '#ee8750',
+  ring: '#ffd83d',
+  stripe: '#ffe66b',
+  ink: '#183944',
+  cream: '#fff6d7',
+  player: '#4e86e8',
+  playerTrim: '#b7e9ff',
+  charger: '#f15e4d',
+  dodger: '#8c62d9',
+  heavy: '#427b57',
+  gold: '#ffc943',
+  pink: '#ff7186',
+  mint: '#6ee0ad'
+};
