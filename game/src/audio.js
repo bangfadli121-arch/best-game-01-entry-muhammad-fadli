@@ -1,94 +1,59 @@
-// Guarded WebAudio synthesis that initializes after the first game gesture.
-let audioContext = null;
-let muted = false;
+export function makeAudio() {
+  let context = null;
+  let muted = false;
 
-function getContext() {
-  try {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  function ensureContext() {
+    if (!context) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        context = new AudioContextClass();
+      }
     }
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
+    if (context && context.state === 'suspended') {
+      context.resume();
     }
-    return audioContext;
-  } catch {
-    return null;
+    return context;
   }
-}
 
-function oscillator(frequency, duration, type = 'sine', volume = 0.04, endFrequency = frequency) {
-  const context = getContext();
-  if (!context || muted) return;
-
-  try {
-    const source = context.createOscillator();
-    const gain = context.createGain();
-    source.type = type;
-    source.frequency.setValueAtTime(frequency, context.currentTime);
-    source.frequency.exponentialRampToValueAtTime(Math.max(1, endFrequency), context.currentTime + duration);
-    gain.gain.setValueAtTime(volume, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
-    source.connect(gain);
-    gain.connect(context.destination);
-    source.start();
-    source.stop(context.currentTime + duration);
-  } catch {
-    // Unsupported audio devices never interrupt the game.
-  }
-}
-
-function noiseBurst(duration = 0.2, volume = 0.08) {
-  const context = getContext();
-  if (!context || muted) return;
-
-  try {
-    const size = Math.floor(context.sampleRate * duration);
-    const buffer = context.createBuffer(1, size, context.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < size; i++) {
-      data[i] = (Math.random() * 2 - 1) * (1 - i / size);
+  function tone(frequency, duration, type = 'sine', volume = 0.08, endFrequency = frequency) {
+    const audio = ensureContext();
+    if (!audio || muted) {
+      return;
     }
-    const source = context.createBufferSource();
-    const filter = context.createBiquadFilter();
-    const gain = context.createGain();
-    filter.type = 'lowpass';
-    filter.frequency.value = 900;
-    gain.gain.value = volume;
-    source.buffer = buffer;
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(context.destination);
-    source.start();
-  } catch {
-    // Browsers without audio support remain fully playable.
+    const oscillator = audio.createOscillator();
+    const gain = audio.createGain();
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, audio.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), audio.currentTime + duration);
+    gain.gain.setValueAtTime(volume, audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
+    oscillator.connect(gain);
+    gain.connect(audio.destination);
+    oscillator.start();
+    oscillator.stop(audio.currentTime + duration);
   }
-}
 
-// Named sounds keep audio cues consistent across simulation systems.
-export function sound(kind, intensity = 1) {
-  if (kind === 'shot') oscillator(1100, 0.055, 'sawtooth', 0.016, 280);
-  if (kind === 'pickup') oscillator(450 + intensity * 85, 0.24, 'sine', 0.055, 900);
-  if (kind === 'kill') oscillator(170, 0.12, 'triangle', 0.07, 65);
-  if (kind === 'boom') noiseBurst(0.28, 0.11);
-  if (kind === 'dash') oscillator(420, 0.22, 'sawtooth', 0.035, 80);
-  if (kind === 'horn') {
-    oscillator(220, 0.42, 'triangle', 0.045, 330);
-    setTimeout(() => oscillator(330, 0.45, 'triangle', 0.045, 440), 140);
+  function play(name) {
+    if (name === 'dash') tone(460, 0.22, 'sawtooth', 0.06, 120);
+    if (name === 'thud') tone(115, 0.16, 'triangle', 0.12, 48);
+    if (name === 'horn') tone(260, 0.55, 'square', 0.07, 440);
+    if (name === 'crash') tone(180, 0.5, 'sawtooth', 0.12, 35);
+    if (name === 'cheer') tone(640, 0.12, 'sine', 0.035, 900);
+    if (name === 'win') {
+      tone(523, 0.45, 'triangle', 0.09, 784);
+      setTimeout(() => tone(659, 0.5, 'triangle', 0.08, 1047), 110);
+      setTimeout(() => tone(784, 0.7, 'triangle', 0.08, 1175), 220);
+    }
+    if (name === 'lose') tone(135, 1.2, 'sine', 0.1, 55);
   }
-  if (kind === 'win') {
-    [440, 554, 659, 880].forEach((note, index) => {
-      setTimeout(() => oscillator(note, 0.35, 'sine', 0.06, note * 1.04), index * 115);
-    });
-  }
-  if (kind === 'lose') oscillator(90, 1.1, 'triangle', 0.07, 38);
-  if (kind === 'shield') {
-    oscillator(520, 0.36, 'sine', 0.04, 680);
-    oscillator(660, 0.36, 'sine', 0.03, 880);
-  }
-}
 
-// The M key changes this shared mute state.
-export function toggleMute() {
-  muted = !muted;
-  return muted;
+  return {
+    play,
+    toggleMute() {
+      muted = !muted;
+      return muted;
+    },
+    unlock: ensureContext,
+    get muted() { return muted; }
+  };
 }
